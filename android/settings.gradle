@@ -1,0 +1,3 @@
+rootProject.name = 'NearByTest'
+
+include ':app'
