@@ -10,7 +10,8 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity
+  TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { NearbyAPI } from "react-native-nearby-api";
 
@@ -33,7 +34,8 @@ export default class App extends Component {
       nearbyMessage: null,
       connectText: "CONNECT",
       isPublishing: false,
-      isSubscribing: false
+      isSubscribing: false,
+      messages: '',
     };
   }
 
@@ -58,36 +60,12 @@ export default class App extends Component {
     nearbyAPI.onFound(message => {
       console.log("Message Found!");
       console.log(message);
-      this.setState({ nearbyMessage: `Message Found - ${message}` });
+      this.setState({ messages: `${this.state.messages}\n-> ${new Date()} - Message Found - ${message}` });
     });
     nearbyAPI.onLost(message => {
       console.log("Message Lost!");
       console.log(message);
-      this.setState({ nearbyMessage: `Message Lost - ${message}` });
-    });
-    /*snearbyAPI.onDistanceChanged((message, value) => {
-      console.log("Distance Changed!");
-      console.log(message, value);
-      this.setState({
-        nearbyMessage: `Distance Changed - ${message} - ${value}`
-      });
-    });*/
-    nearbyAPI.onPublishSuccess(message => {
-      nearbyAPI.isPublishing((status, error) => {
-        this.setState({
-          nearbyMessage: `Publish Success - ${message}`,
-          isPublishing: status
-        });
-      });
-    });
-    nearbyAPI.onPublishFailed(message => {
-      console.log(message);
-      nearbyAPI.isPublishing((status, error) => {
-        this.setState({
-          nearbyMessage: `Publish Failed - ${message}`,
-          isPublishing: status
-        });
-      });
+      this.setState({ messages: `${this.state.messages}\n-> ${new Date()} - Message Lost - ${message}` });
     });
     nearbyAPI.onSubscribeSuccess(() => {
       nearbyAPI.isSubscribing((status, error) => {
@@ -121,20 +99,6 @@ export default class App extends Component {
     }
   };
 
-  _publishPress = () => {
-    if (!this.state.isPublishing) {
-      nearbyAPI.publish(`Hello World! - ${Math.random()}`);
-    } else {
-      nearbyAPI.unpublish();
-      nearbyAPI.isPublishing((status, error) => {
-        this.setState({
-          nearbyMessage: `unpublished`,
-          isPublishing: status
-        });
-      });
-    }
-  };
-
   _subscribePress = () => {
     if (!this.state.isSubscribing) {
       nearbyAPI.subscribe();
@@ -159,9 +123,6 @@ export default class App extends Component {
           Is Connected: {`${this.state.isConnected}`}
         </Text>
         <Text style={styles.instructions}>
-          Is Publishing: {`${this.state.isPublishing}`}
-        </Text>
-        <Text style={styles.instructions}>
           Is Subscribing: {`${this.state.isSubscribing}`}
         </Text>
         <Text style={styles.instructions}>{this.state.nearbyMessage}</Text>
@@ -170,18 +131,15 @@ export default class App extends Component {
             {this.state.isConnected ? "DISCONNECT" : "CONNECT"}
           </Text>
         </TouchableOpacity>
-        <View style={{ height: 32 }} />
-        <TouchableOpacity onPress={this._publishPress}>
-          <Text style={styles.connectButton}>
-            {this.state.isPublishing ? "UNPUBLISH" : "PUBLISH"}
-          </Text>
-        </TouchableOpacity>
-        <View style={{ height: 32 }} />
+        <View style={{ height: 10 }} />
         <TouchableOpacity onPress={this._subscribePress}>
           <Text style={styles.connectButton}>
             {this.state.isSubscribing ? "UNSUBSCRIBE" : "SUBSCRIBE"}
           </Text>
         </TouchableOpacity>
+        <ScrollView>
+          <Text>{this.state.messages}</Text>
+        </ScrollView>
       </View>
     );
   }
@@ -190,7 +148,7 @@ export default class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     backgroundColor: "#F5FCFF"
   },
