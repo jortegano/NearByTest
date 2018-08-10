@@ -12,10 +12,12 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
+  PushNotificationIOS,
   AppState,
 } from "react-native";
 import { NearbyAPI } from "react-native-nearby-api";
 import Beacons from 'react-native-beacons-manager';
+import PushNotification from 'react-native-push-notification';
 
 const instructions = Platform.select({
   ios: "Press Cmd+R to reload,\n" + "Cmd+D or shake for dev menu",
@@ -48,14 +50,22 @@ export default class App extends Component {
       isPublishing: false,
       isSubscribing: false,
       messages: '',
+      appState: AppState.currentState,
     };
   }
 
   componentDidMount() {
-    console.log("Mounting ", NearbyAPI);
+    AppState.addEventListener('change', this._handleAppStateChange);
+    nearbyAPI.connect(API_KEY);
+
     nearbyAPI.onConnected(message => {
       console.log(message);
       nearbyAPI.isConnected((connected, error) => {
+        
+        if(connected){
+          nearbyAPI.subscribe();
+        }
+
         this.setState({
           nearbyMessage: `Connected - ${message}`,
           isConnected: connected
@@ -96,7 +106,31 @@ export default class App extends Component {
       });
     });
 
+    this.enableLocalNotifications();
     this.scanWithBeaconManager();
+  }
+
+  disconntNearbyApi(){
+    nearbyAPI.unsubscribe();
+    nearbyAPI.disconnect();
+  }
+
+  componentWillUnmount() {
+    this.disconntNearbyApi();
+    AppState.removeEventListener('change', this._handleAppStateChange);
+  }
+
+  _handleAppStateChange = (nextAppState) => {
+    console.log('currentAppState -> ', this.state.appState);
+    console.log('nextAppState -> ', nextAppState);
+
+    if (this.state.appState.match(/inactive|background/) && nextAppState === 'active') {
+      nearbyAPI.connect(API_KEY);
+      console.log('App has come to the foreground!') 
+    } else {
+      this.disconntNearbyApi();
+    }
+    this.setState({appState: nextAppState});
   }
 
   _connectPress = () => {
@@ -127,6 +161,46 @@ export default class App extends Component {
     }
   };
 
+  enableLocalNotifications = () => {
+    if(Platform.OS === 'ios'){
+      PushNotification.configure({
+
+        // (required) Called when a remote or local notification is opened or received
+        onNotification: function(notification) {
+            console.log( 'NOTIFICATION:', notification );
+            // required on iOS only (see fetchCompletionHandler docs: https://facebook.github.io/react-native/docs/pushnotificationios.html)
+            notification.finish(PushNotificationIOS.FetchResult.NoData);
+        },
+    
+        // IOS ONLY (optional): default: all - Permissions to register.
+        permissions: {
+            alert: true,
+            badge: true,
+            sound: true
+        },
+    
+        // Should the initial notification be popped automatically
+        // default: true
+        popInitialNotification: true,
+    
+        /**
+          * (optional) default: true
+          * - Specified if permissions (ios) and token (android and ios) will requested or not,
+          * - if not, you must call PushNotificationsHandler.requestPermissions() later
+          */
+        requestPermissions: true,
+      });
+    }
+  }
+
+  sendLocalNotification = (msg) => {
+    if(Platform.OS === 'ios'){
+      PushNotification.localNotification({
+        message: msg,
+      });
+    }
+  }
+
   scanWithBeaconManager = () => {
     if(Platform.OS === 'ios'){
       console.log('###### ScanWithBeaconManager');
@@ -145,6 +219,7 @@ export default class App extends Component {
           'regionDidEnter',
           (data) => {
             console.log('monitoring - regionDidEnter data: ', data);
+            this.sendLocalNotification('monitoring - regionDidEnter data');
           }
         );
  
@@ -152,6 +227,7 @@ export default class App extends Component {
           'regionDidExit',
           ({ identifier, uuid, minor, major }) => {
             console.log('monitoring - regionDidExit data: ', { identifier, uuid, minor, major });
+            this.sendLocalNotification('monitoring - regionDidExit data');
           }
         );
       }).catch(error => console.log(`Beacons monitoring not started, error: ${error}`));
