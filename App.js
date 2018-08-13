@@ -56,8 +56,8 @@ export default class App extends Component {
 
   componentDidMount() {
     AppState.addEventListener('change', this._handleAppStateChange);
+    
     nearbyAPI.connect(API_KEY);
-
     nearbyAPI.onConnected(message => {
       console.log(message);
       nearbyAPI.isConnected((connected, error) => {
@@ -107,7 +107,6 @@ export default class App extends Component {
     });
 
     this.enableLocalNotifications();
-    this.scanWithBeaconManager();
   }
 
   disconntNearbyApi(){
@@ -125,10 +124,13 @@ export default class App extends Component {
     console.log('nextAppState -> ', nextAppState);
 
     if (this.state.appState.match(/inactive|background/) && nextAppState === 'active') {
+      this.stopScanningWithBeaconManager();
       nearbyAPI.connect(API_KEY);
-      console.log('App has come to the foreground!') 
-    } else {
+      console.log('#####call to stopScanningWithBeaconManager....') 
+    } else if (nextAppState === 'background') {
+      console.log('#####call to scanWithBeaconManager....')
       this.disconntNearbyApi();
+      this.scanWithBeaconManager();
     }
     this.setState({appState: nextAppState});
   }
@@ -239,23 +241,17 @@ export default class App extends Component {
 
   stopScanningWithBeaconManager = () => {
     if(Platform.OS === 'ios'){
+      const region = { identifier: this.identifier, uuid: this.uuid };
       Beacons
       .stopMonitoringForRegion(region)
       .then(() => console.log('Beacons monitoring stopped succesfully'))
       .catch(error => console.log(`Beacons monitoring not stopped, error: ${error}`));
       // stop updating locationManager:
       Beacons.stopUpdatingLocation();
-      // remove auth state event we registered at componentDidMount:
-      this.authStateDidRangeEvent.remove();
       // remove monitiring events we registered at componentDidMount::
-      this.regionDidEnterEvent.remove();
-      this.regionDidExitEvent.remove();
+      if(this.regionDidEnterEvent) this.regionDidEnterEvent.remove();
+      if(this.regionDidExitEvent) this.regionDidExitEvent.remove();
     }
-  }
-
-  componentWillUnMount() {
-    // stop monitoring beacons:
-    this.stopScanningWithBeaconManager();
   }
 
   render() {
