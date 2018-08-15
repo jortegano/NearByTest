@@ -37,8 +37,6 @@
 	</dict>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Bluetooth premission¡¡¡</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>
@@ -60,5 +58,9 @@
 	<false/>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Beacons scanning!!!</string>
+  <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Beacons usage</string>
+  <key>NSLocationWhenInUseUsageDescription</key>
+	<string>Beacons usage</string>
 </dict>
 </plist>

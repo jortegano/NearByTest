@@ -18,6 +18,7 @@ import {
 import { NearbyAPI } from "react-native-nearby-api";
 import Beacons from 'react-native-beacons-manager';
 import PushNotification from 'react-native-push-notification';
+import _ from 'lodash';
 
 const instructions = Platform.select({
   ios: "Press Cmd+R to reload,\n" + "Cmd+D or shake for dev menu",
@@ -27,7 +28,6 @@ const instructions = Platform.select({
 });
 
 const nearbyAPI = new NearbyAPI(true);
-
 const API_KEY = "AIzaSyCbr07ltdESJFUFWNF9SejR1SkdfoJhl84";
 
 export default class App extends Component {
@@ -52,14 +52,21 @@ export default class App extends Component {
       messages: '',
       appState: AppState.currentState,
     };
+
+    this.sendLocalNotificationDebounced = _.debounce(this.sendLocalNotification, 5000, {'leading': true,'trailing': false});
   }
 
   componentDidMount() {
-    AppState.addEventListener('change', this._handleAppStateChange);
-    
+    //AppState.addEventListener('change', this._handleAppStateChange);
+    this.enableLocalNotifications();
+    this.setupNearbyApi();
+    this.scanWithBeaconManager();
+  }
+
+  setupNearbyApi = () => {
     nearbyAPI.connect(API_KEY);
     nearbyAPI.onConnected(message => {
-      console.log(message);
+      console.log('##NearbyAPI -> ', message);
       nearbyAPI.isConnected((connected, error) => {
         
         if(connected){
@@ -73,20 +80,18 @@ export default class App extends Component {
       });
     });
     nearbyAPI.onDisconnected(message => {
-      console.log(message);
+      console.log('##NearbyAPI -> ', message);
       this.setState({
         isConnected: false,
         nearbyMessage: `Disconnected - ${message}`
       });
     });
     nearbyAPI.onFound(message => {
-      console.log("Message Found!");
-      console.log(message);
+      console.log("##NearbyAPI -> Message Found: ", message);
       this.setState({ messages: `${this.state.messages}\n-> ${new Date()} - Message Found - ${message}` });
     });
     nearbyAPI.onLost(message => {
-      console.log("Message Lost!");
-      console.log(message);
+      console.log("##NearbyAPI -> Message Lost: ", message);
       this.setState({ messages: `${this.state.messages}\n-> ${new Date()} - Message Lost - ${message}` });
     });
     nearbyAPI.onSubscribeSuccess(() => {
@@ -105,18 +110,28 @@ export default class App extends Component {
         });
       });
     });
-
-    this.enableLocalNotifications();
   }
 
   disconntNearbyApi(){
-    nearbyAPI.unsubscribe();
-    nearbyAPI.disconnect();
+    return new Promise((resolve, reject) => {
+      console.log('##NearbyAPI -> disconntNearbyApi');
+      nearbyAPI.unsubscribe();
+      nearbyAPI.disconnect();
+      setTimeout(() => {
+        resolve();
+      }, 1000);
+    });
+  }
+
+  connectNearByApi(){
+    nearbyAPI.connect(API_KEY);
+    //nearbyAPI.subscribe();
   }
 
   componentWillUnmount() {
     this.disconntNearbyApi();
-    AppState.removeEventListener('change', this._handleAppStateChange);
+    this.stopScanningWithBeaconManager();
+    //AppState.removeEventListener('change', this._handleAppStateChange);
   }
 
   _handleAppStateChange = (nextAppState) => {
@@ -124,18 +139,19 @@ export default class App extends Component {
     console.log('nextAppState -> ', nextAppState);
 
     if (this.state.appState.match(/inactive|background/) && nextAppState === 'active') {
-      this.stopScanningWithBeaconManager();
-      nearbyAPI.connect(API_KEY);
-      console.log('#####call to stopScanningWithBeaconManager....') 
+      this.stopScanningWithBeaconManager().then(() => {
+        this.connectNearByApi();
+      });
     } else if (nextAppState === 'background') {
-      console.log('#####call to scanWithBeaconManager....')
-      this.disconntNearbyApi();
-      this.scanWithBeaconManager();
+      this.sendLocalNotification('En Background...');
+      this.disconntNearbyApi().then(() => {
+        this.scanWithBeaconManager();
+      });
     }
     this.setState({appState: nextAppState});
   }
 
-  _connectPress = () => {
+  /*_connectPress = () => {
     if (this.state.isConnected) {
       nearbyAPI.disconnect();
       nearbyAPI.isConnected((connected, error) => {
@@ -147,9 +163,9 @@ export default class App extends Component {
     } else {
       nearbyAPI.connect(API_KEY);
     }
-  };
+  };*/
 
-  _subscribePress = () => {
+  /*_subscribePress = () => {
     if (!this.state.isSubscribing) {
       nearbyAPI.subscribe();
     } else {
@@ -161,7 +177,7 @@ export default class App extends Component {
         });
       });
     }
-  };
+  };*/
 
   enableLocalNotifications = () => {
     if(Platform.OS === 'ios'){
@@ -169,7 +185,6 @@ export default class App extends Component {
 
         // (required) Called when a remote or local notification is opened or received
         onNotification: function(notification) {
-            console.log( 'NOTIFICATION:', notification );
             // required on iOS only (see fetchCompletionHandler docs: https://facebook.github.io/react-native/docs/pushnotificationios.html)
             notification.finish(PushNotificationIOS.FetchResult.NoData);
         },
@@ -205,34 +220,34 @@ export default class App extends Component {
 
   scanWithBeaconManager = () => {
     if(Platform.OS === 'ios'){
-      console.log('###### ScanWithBeaconManager');
-      Beacons.requestAlwaysAuthorization();
+      console.log('##BeaconsManager -> ScanWithBeaconManager...');
+      //Beacons.requestAlwaysAuthorization();
       Beacons.allowsBackgroundLocationUpdates(true);
       Beacons.shouldDropEmptyRanges(true);
       const region = { identifier: this.identifier, uuid: this.uuid };
-      console.log('region data ->', region);
+      console.log('##BeaconsManager -> region data: ', region);
 
       Beacons
       .startMonitoringForRegion(region) // or like  < v1.0.7: .startRangingBeaconsInRegion(identifier, uuid)
       .then(() => {
-        console.log('Beacons monitoring started succesfully')
+        console.log('##BeaconsManager -> Beacons monitoring started succesfully')
         // start monitoring:
         this.regionDidEnterEvent = Beacons.BeaconsEventEmitter.addListener(
           'regionDidEnter',
           (data) => {
-            console.log('monitoring - regionDidEnter data: ', data);
-            this.sendLocalNotification('monitoring - regionDidEnter data');
+            console.log('##BeaconsManager -> regionDidEnter data: ', data);
+            this.sendLocalNotificationDebounced('regionDidEnter');
           }
         );
  
         this.regionDidExitEvent = Beacons.BeaconsEventEmitter.addListener(
           'regionDidExit',
           ({ identifier, uuid, minor, major }) => {
-            console.log('monitoring - regionDidExit data: ', { identifier, uuid, minor, major });
-            this.sendLocalNotification('monitoring - regionDidExit data');
+            console.log('##BeaconsManager -> regionDidExit data: ', { identifier, uuid, minor, major });
+            this.sendLocalNotificationDebounced('regionDidExit');
           }
         );
-      }).catch(error => console.log(`Beacons monitoring not started, error: ${error}`));
+      }).catch(error => console.log(`##BeaconsManager -> Beacons monitoring not started, error: ${error}`));
 
       Beacons.startUpdatingLocation();
       
@@ -240,18 +255,29 @@ export default class App extends Component {
   }
 
   stopScanningWithBeaconManager = () => {
-    if(Platform.OS === 'ios'){
-      const region = { identifier: this.identifier, uuid: this.uuid };
-      Beacons
-      .stopMonitoringForRegion(region)
-      .then(() => console.log('Beacons monitoring stopped succesfully'))
-      .catch(error => console.log(`Beacons monitoring not stopped, error: ${error}`));
-      // stop updating locationManager:
-      Beacons.stopUpdatingLocation();
-      // remove monitiring events we registered at componentDidMount::
-      if(this.regionDidEnterEvent) this.regionDidEnterEvent.remove();
-      if(this.regionDidExitEvent) this.regionDidExitEvent.remove();
-    }
+    return new Promise((resolve, reject) => {
+      if(Platform.OS === 'ios'){
+        console.log('##BeaconsManager -> stopScanningWithBeaconManager....') 
+        const region = { identifier: this.identifier, uuid: this.uuid };
+        Beacons
+        .stopMonitoringForRegion(region)
+        .then(() => { 
+          console.log('##BeaconsManager -> Beacons monitoring stopped succesfully');
+          resolve();
+        })
+        .catch(error => {
+          console.log(`##BeaconsManager -> Beacons monitoring not stopped, error: ${error}`);
+          reject(error);
+        });
+        // stop updating locationManager:
+        Beacons.stopUpdatingLocation();
+        // remove monitiring events we registered at componentDidMount::
+        if(this.regionDidEnterEvent) this.regionDidEnterEvent.remove();
+        if(this.regionDidExitEvent) this.regionDidExitEvent.remove();
+      } else {
+        resolve();
+      }
+    });
   }
 
   render() {
@@ -267,17 +293,6 @@ export default class App extends Component {
           Is Subscribing: {`${this.state.isSubscribing}`}
         </Text>
         <Text style={styles.instructions}>{this.state.nearbyMessage}</Text>
-        <TouchableOpacity onPress={this._connectPress}>
-          <Text style={styles.connectButton}>
-            {this.state.isConnected ? "DISCONNECT" : "CONNECT"}
-          </Text>
-        </TouchableOpacity>
-        <View style={{ height: 10 }} />
-        <TouchableOpacity onPress={this._subscribePress}>
-          <Text style={styles.connectButton}>
-            {this.state.isSubscribing ? "UNSUBSCRIBE" : "SUBSCRIBE"}
-          </Text>
-        </TouchableOpacity>
         <ScrollView>
           <Text>{this.state.messages}</Text>
         </ScrollView>
