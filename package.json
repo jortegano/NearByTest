@@ -12,7 +12,8 @@
     "react-native": "0.53.3",
     "react-native-beacons-manager": "https://github.com/MacKentoch/react-native-beacons-manager.git",
     "react-native-nearby-api": "https://github.com/devtence/react-native-nearby-api#beacons-hotfix",
-    "react-native-push-notification": "^3.1.1"
+    "react-native-push-notification": "^3.1.1",
+    "urbanairship-react-native": "1.6.2"
   },
   "devDependencies": {
     "babel-jest": "23.4.0",
