@@ -68,14 +68,22 @@ export default class App extends Component {
 
   setupNearbyApi = () => {
     nearbyAPI.connect(API_KEY);
+
+    if(Platform.OS === 'android') {
+      //hack...find a better solution for production app
+      setTimeout(() => {
+        nearbyAPI.isConnected((connected, error) => {
+          if(!connected) {
+            nearbyAPI.connect(API_KEY);
+          }
+        });
+      }, 5000); 
+    }
+
     nearbyAPI.onConnected(message => {
       console.log('##NearbyAPI -> ', message);
+      nearbyAPI.subscribe();
       nearbyAPI.isConnected((connected, error) => {
-        
-        if(connected){
-          nearbyAPI.subscribe();
-        }
-
         this.setState({
           nearbyMessage: `Connected - ${message}`,
           isConnected: connected
@@ -154,19 +162,16 @@ export default class App extends Component {
     this.setState({appState: nextAppState});
   }
 
-  /*_connectPress = () => {
-    if (this.state.isConnected) {
-      nearbyAPI.disconnect();
+  _connectPress = () => {
+    if (!this.state.isConnected) {
+      nearbyAPI.connect(API_KEY);
       nearbyAPI.isConnected((connected, error) => {
         this.setState({
-          nearbyMessage: `Disconnected`,
           isConnected: connected
         });
       });
-    } else {
-      nearbyAPI.connect(API_KEY);
     }
-  };*/
+  };
 
   /*_subscribePress = () => {
     if (!this.state.isSubscribing) {
@@ -294,6 +299,9 @@ export default class App extends Component {
         </Text>
         <Text style={styles.instructions}>
           Is Subscribing: {`${this.state.isSubscribing}`}
+        </Text>
+        <Text style={styles.instructions} onPress={this._connectPress}>
+          CONNECT
         </Text>
         <Text style={styles.instructions}>{this.state.nearbyMessage}</Text>
         <ScrollView>
