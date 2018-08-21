@@ -19,6 +19,7 @@ import { NearbyAPI } from "react-native-nearby-api";
 import Beacons from 'react-native-beacons-manager';
 import PushNotification from 'react-native-push-notification';
 import _ from 'lodash';
+import { UrbanAirship } from 'urbanairship-react-native'
 
 const instructions = Platform.select({
   ios: "Press Cmd+R to reload,\n" + "Cmd+D or shake for dev menu",
@@ -54,6 +55,8 @@ export default class App extends Component {
     };
 
     this.sendLocalNotificationDebounced = _.debounce(this.sendLocalNotification, 5000, {'leading': true,'trailing': false});
+
+    UrbanAirship.setUserNotificationsEnabled(true);
   }
 
   componentDidMount() {
