@@ -8,6 +8,7 @@ target 'NearByTest' do
   # Pods for NearByTest
 
   pod 'NearbyMessages'
+  pod 'UrbanAirship-iOS-SDK'
 
   target 'NearByTest-tvOSTests' do
     inherit! :search_paths
