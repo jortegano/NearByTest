@@ -99,12 +99,12 @@ export default class App extends Component {
     });
     nearbyAPI.onFound(message => {
       console.log("##NearbyAPI -> Message Found: ", message);
-      this.sendLocalNotificationDebounced('##NearbyAPI -> Message Found');
+      this.sendLocalNotificationDebounced('Found: ' + message);
       this.setState({ messages: `${this.state.messages}\n-> ${new Date()} - Message Found - ${message}` });
     });
     nearbyAPI.onLost(message => {
       console.log("##NearbyAPI -> Message Lost: ", message);
-      this.sendLocalNotificationDebounced('##NearbyAPI -> Message Lost');
+      this.sendLocalNotificationDebounced('Lost: ' + message);
       this.setState({ messages: `${this.state.messages}\n-> ${new Date()} - Message Lost - ${message}` });
     });
     nearbyAPI.onSubscribeSuccess(() => {
