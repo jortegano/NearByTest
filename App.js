@@ -16,7 +16,7 @@ import {
   AppState,
 } from "react-native";
 import { NearbyAPI } from "react-native-nearby-api";
-import Beacons from 'react-native-beacons-manager';
+//import Beacons from 'react-native-beacons-manager';
 import PushNotification from 'react-native-push-notification';
 import _ from 'lodash';
 import { UrbanAirship } from 'urbanairship-react-native'
@@ -63,7 +63,7 @@ export default class App extends Component {
     //AppState.addEventListener('change', this._handleAppStateChange);
     this.enableLocalNotifications();
     this.setupNearbyApi();
-    this.scanWithBeaconManager();
+    //this.scanWithBeaconManager();
   }
 
   setupNearbyApi = () => {
@@ -99,10 +99,12 @@ export default class App extends Component {
     });
     nearbyAPI.onFound(message => {
       console.log("##NearbyAPI -> Message Found: ", message);
+      this.sendLocalNotificationDebounced('##NearbyAPI -> Message Found');
       this.setState({ messages: `${this.state.messages}\n-> ${new Date()} - Message Found - ${message}` });
     });
     nearbyAPI.onLost(message => {
       console.log("##NearbyAPI -> Message Lost: ", message);
+      this.sendLocalNotificationDebounced('##NearbyAPI -> Message Lost');
       this.setState({ messages: `${this.state.messages}\n-> ${new Date()} - Message Lost - ${message}` });
     });
     nearbyAPI.onSubscribeSuccess(() => {
@@ -141,7 +143,7 @@ export default class App extends Component {
 
   componentWillUnmount() {
     this.disconntNearbyApi();
-    this.stopScanningWithBeaconManager();
+    //this.stopScanningWithBeaconManager();
     //AppState.removeEventListener('change', this._handleAppStateChange);
   }
 
