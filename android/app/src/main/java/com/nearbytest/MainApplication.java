@@ -3,6 +3,7 @@ package com.nearbytest;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import com.dieam.reactnativepushnotification.ReactNativePushNotificationPackage;
 import com.urbanairship.reactnative.ReactAirshipPackage;
 import com.mackentoch.beaconsandroid.BeaconsAndroidPackage;
 import com.badfeatures.nearby.RNNearbyApiPackage;
@@ -26,6 +27,7 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new ReactNativePushNotificationPackage(),
             new ReactAirshipPackage(),
             new BeaconsAndroidPackage(),
             new RNNearbyApiPackage()

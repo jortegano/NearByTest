@@ -12,7 +12,7 @@
     "react-native": "0.53.3",
     "react-native-beacons-manager": "git+https://github.com/devtence/react-native-beacons-manager.git#hotfix",
     "react-native-nearby-api": "git+https://github.com/devtence/react-native-nearby-api#beacons-hotfix",
-    "react-native-push-notification": "^3.1.1",
+    "react-native-push-notification": "3.0.2",
     "urbanairship-react-native": "1.6.2"
   },
   "devDependencies": {

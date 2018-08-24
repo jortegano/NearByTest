@@ -221,11 +221,11 @@ export default class App extends Component {
   }
 
   sendLocalNotification = (msg) => {
-    if(Platform.OS === 'ios'){
+    //if(Platform.OS === 'ios'){
       PushNotification.localNotification({
         message: msg,
       });
-    }
+    //}
   }
 
   scanWithBeaconManager = () => {
