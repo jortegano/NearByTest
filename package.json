@@ -7,7 +7,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.13",
     "react": "16.2.0",
     "react-native": "0.53.3",
     "react-native-beacons-manager": "git+https://github.com/devtence/react-native-beacons-manager.git#hotfix",
